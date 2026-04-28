@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOW Generator — ALG Digital</title>
+<style>
+  /* ── FONTS ─────────────────────────────────────────── */
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,900;1,9..40,300;1,9..40,400&display=swap');
+
+  /* Monument Grotesk fallback chain — swap with local @font-face if you have the files */
+  :root {
+    --font-display: 'DM Sans', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+
+    /* Brand */
+    --black: #000000;
+    --white: #ffffff;
+    --accent: #1a1aff;
+    --accent2: #ff3c00;
+    --mid: #8a8a8a;
+    --surface: #111111;
+    --border: #222222;
+
+    /* Form panel */
+    --panel-bg: rgba(10,10,10,0.82);
+    --panel-border: rgba(255,255,255,0.07);
+    --input-bg: rgba(255,255,255,0.05);
+    --input-border: rgba(255,255,255,0.12);
+    --input-focus: rgba(26,26,255,0.5);
+
+    /* Preview */
+    --preview-bg: #1a1a1a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--black);
+    color: var(--white);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOPBAR ─────────────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(12px);
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .topbar-logo {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar-logo span {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--mid);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .topbar-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--mid);
+  }
+  .btn-ghost:hover { border-color: var(--white); color: var(--white); }
+
+  .btn-primary {
+    background: var(--white);
+    color: var(--black);
+    padding: 8px 22px;
+  }
+  .btn-primary:hover { background: #e0e0e0; }
+
+  .btn-pdf {
+    background: var(--accent);
+    color: var(--white);
+    padding: 8px 22px;
+    font-size: 13px;
+  }
+  .btn-pdf:hover { background: #0000cc; }
+
+  /* ── MAIN LAYOUT ──────────────────────────────────────── */
+  .main {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ──────────────────────────────────────── */
+  .panel {
+    position: relative;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+
+  #bgCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .panel-inner {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    overflow-y: auto;
+    padding: 24px 22px 40px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(20px);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .panel-inner::-webkit-scrollbar { width: 4px; }
+  .panel-inner::-webkit-scrollbar-track { background: transparent; }
+  .panel-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── FORM SECTIONS ──────────────────────────────────── */
+  .form-section {
+    margin-bottom: 28px;
+  }
+
+  .form-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .form-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--mid);
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 20px;
+  }
+
+  .field {
+    margin-bottom: 12px;
+  }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--mid);
+    margin-bottom: 5px;
+    letter-spacing: 0.04em;
+  }
+  .field input,
+  .field textarea,
+  .field select {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 5px;
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+  .field input:focus,
+  .field textarea:focus,
+  .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--input-focus);
+  }
+  .field textarea { min-height: 72px; }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* ── TOGGLE SECTIONS ──────────────────────────────────── */
+  .section-toggles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .toggle-item:hover { border-color: rgba(255,255,255,0.25); }
+  .toggle-item.active {
+    border-color: var(--accent);
+    background: rgba(26,26,255,0.1);
+  }
+  .toggle-item.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .toggle-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .toggle-item.active .toggle-dot { background: var(--accent); }
+
+  .toggle-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--mid);
+  }
+  .toggle-item.active .toggle-label { color: var(--white); }
+
+  /* ── DYNAMIC TABLES ─────────────────────────────────── */
+  .table-builder {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .table-builder table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table-builder th {
+    background: rgba(255,255,255,0.05);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mid);
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-builder td {
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: top;
+  }
+
+  .table-builder tr:last-child td { border-bottom: none; }
+
+  .table-builder input,
+  .table-builder textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 11px;
+    padding: 4px;
+    outline: none;
+    resize: none;
+  }
+  .table-builder input:focus,
+  .table-builder textarea:focus {
+    background: rgba(26,26,255,0.08);
+    border-radius: 3px;
+  }
+
+  .table-actions {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    background: rgba(255,255,255,0.02);
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-small {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-add { background: rgba(26,26,255,0.2); color: #8888ff; }
+  .btn-add:hover { background: rgba(26,26,255,0.35); }
+  .btn-remove { background: rgba(255,60,0,0.15); color: #ff7055; }
+  .btn-remove:hover { background: rgba(255,60,0,0.3); }
+
+  /* ── TEAM BUILDER ──────────────────────────────────── */
+  .team-member-card {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+
+  .team-member-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .team-member-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mid);
+  }
+
+  .btn-remove-card {
+    background: none;
+    border: none;
+    color: var(--mid);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 4px;
+    transition: color 0.15s;
+  }
+  .btn-remove-card:hover { color: var(--accent2); }
+
+  /* ── Photo upload ── */
+  .photo-upload {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .photo-preview {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--border);
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    border: 1px solid var(--input-border);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--mid);
+  }
+  .photo-upload-btn {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--mid);
+    background: var(--input-bg);
+    border: 1px dashed var(--input-border);
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .photo-upload-btn:hover { border-color: var(--accent); color: var(--white); }
+
+  /* ── IMAGE UPLOAD ──────────────────────────────────── */
+  .image-upload-area {
+    border: 1.5px dashed var(--input-border);
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .image-upload-area:hover { border-color: var(--accent); }
+  .image-upload-area input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .image-upload-area p { font-size: 12px; color: var(--mid); }
+  .image-upload-area .icon { font-size: 24px; margin-bottom: 6px; }
+
+  .uploaded-img-preview {
+    margin-top: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+    max-height: 80px;
+  }
+  .uploaded-img-preview img { width: 100%; object-fit: cover; max-height: 80px; }
+
+  /* ── RIGHT PREVIEW ──────────────────────────────────── */
+  .preview-area {
+    background: var(--preview-bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .preview-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
+
+  .preview-toolbar-left {
+    font-size: 11px;
+    color: var(--mid);
+    letter-spacing: 0.05em;
+  }
+
+  .page-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .page-nav button {
+    background: var(--border);
+    border: none;
+    color: var(--white);
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .page-nav button:hover { background: #333; }
+  .page-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .page-nav span {
+    font-size: 12px;
+    color: var(--mid);
+    min-width: 50px;
+    text-align: center;
+  }
+
+  .preview-canvas {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 32px 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .preview-canvas::-webkit-scrollbar { width: 4px; }
+  .preview-canvas::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* ── SOW PAGE ──────────────────────────────────────── */
+  .sow-page {
+    width: 680px;
+    min-height: 960px;
+    background: var(--white);
+    color: var(--black);
+    position: relative;
+    box-shadow: 0 8px 64px rgba(0,0,0,0.7);
+    display: none;
+    flex-direction: column;
+    font-family: var(--font-body);
+  }
+  .sow-page.active { display: flex; }
+
+  /* Cover / Contraportada */
+  .sow-page.dark {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  /* ── COVER PAGE ─── */
+  .cover-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 60px;
+    position: relative;
+  }
+
+  .cover-logo {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 96px;
+    letter-spacing: -4px;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .cover-logo-sup {
+    font-size: 20px;
+    font-weight: 400;
+    margin-top: 14px;
+    opacity: 0.6;
+  }
+
+  .cover-tagline {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 60px;
+  }
+
+  .cover-domain {
+    position: absolute;
+    bottom: 40px;
+    left: 60px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+  }
+
+  /* ── INFO PAGES ─── */
+  .sow-page.light {
+    background: var(--white);
+    color: var(--black);
+  }
+
+  .page-header {
+    padding: 40px 52px 0;
+    margin-bottom: 32px;
+  }
+
+  .page-tag {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 8px;
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 42px;
+    letter-spacing: -1.5px;
+    line-height: 1.05;
+    color: var(--black);
+  }
+
+  .page-body {
+    padding: 0 52px 52px;
+    flex: 1;
+  }
+
+  /* Objetivo */
+  .objective-block {
+    margin-bottom: 24px;
+  }
+
+  .objective-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  .objective-text {
+    font-size: 13px;
+    line-height: 1.65;
+    color: #1a1a1a;
+  }
+
+  .objective-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+  }
+
+  .objective-num {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--mid);
+    margin-top: 3px;
+    flex-shrink: 0;
+    width: 20px;
+  }
+
+  .objective-content {}
+  .objective-content strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: var(--black);
+  }
+  .objective-content p {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #444;
+  }
+
+  /* Roadmap table */
+  .sow-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .sow-table th {
+    background: var(--black);
+    color: var(--white);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    text-align: left;
+  }
+  .sow-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e8e8e8;
+    vertical-align: top;
+    line-height: 1.5;
+    color: #222;
+    font-size: 11px;
+  }
+  .sow-table tr:nth-child(even) td { background: #f8f8f8; }
+
+  /* Team grid */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .team-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .team-photo {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: #e5e5e5;
+    background-size: cover;
+    background-position: center;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .team-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+  .team-name {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .team-role {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .team-email {
+    font-size: 10px;
+    color: #555;
+    word-break: break-all;
+  }
+
+  /* Payment table */
+  .payment-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .payment-table th {
+    background: var(--black);
+    color: var(--white);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  .payment-table th:last-child { text-align: right; }
+  .payment-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e8e8e8;
+    vertical-align: top;
+    color: #222;
+    line-height: 1.5;
+  }
+  .payment-table td:last-child { text-align: right; font-weight: 700; white-space: nowrap; }
+  .payment-table tr:nth-child(even) td { background: #f8f8f8; }
+  .payment-total td {
+    background: var(--black) !important;
+    color: var(--white) !important;
+    font-weight: 900;
+    font-size: 13px;
+  }
+
+  /* Calendar image */
+  .calendar-img-wrap {
+    width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #e8e8e8;
+  }
+  .calendar-img-wrap img { width: 100%; display: block; }
+
+  /* TyC */
+  .tyc-list {
+    list-style: none;
+    counter-reset: tyc-counter;
+  }
+  .tyc-list li {
+    counter-increment: tyc-counter;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: #333;
+  }
+  .tyc-list li::before {
+    content: counter(tyc-counter, decimal-leading-zero);
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--mid);
+    margin-top: 3px;
+    flex-shrink: 0;
+    width: 20px;
+  }
+
+  /* "Preparado para" page */
+  .prepared-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+  }
+  .prepared-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 16px;
+  }
+  .prepared-client {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 48px;
+    letter-spacing: -2px;
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 20px;
+  }
+  .prepared-details {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    line-height: 2;
+  }
+  .prepared-details span { color: rgba(255,255,255,0.9); }
+
+  /* Contraportada */
+  .backcover-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 60px;
+  }
+  .backcover-inner .alg-header {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 28px;
+    letter-spacing: -1px;
+    margin-bottom: 48px;
+    opacity: 0.6;
+    display: flex;
+    align-items: flex-start;
+    gap: 3px;
+  }
+  .backcover-inner .alg-header sup {
+    font-size: 10px; font-weight: 400; margin-top: 5px;
+  }
+
+  .contacts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .contact-item {}
+  .contact-item .contact-name {
+    font-size: 18px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    margin-bottom: 2px;
+  }
+  .contact-item .contact-role {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+  }
+  .contact-item .contact-company {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .contact-item .contact-email {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .backcover-logo {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 120px;
+    letter-spacing: -6px;
+    color: rgba(255,255,255,0.08);
+    line-height: 1;
+    text-align: right;
+    margin-top: auto;
+  }
+
+  /* Page footer bar */
+  .page-footer {
+    padding: 14px 52px;
+    border-top: 1px solid #e8e8e8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .page-footer-alg {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--mid);
+  }
+  .page-footer-page {
+    font-size: 10px;
+    color: #ccc;
+  }
+
+  /* Dark footer */
+  .dark .page-footer {
+    border-top-color: rgba(255,255,255,0.08);
+  }
+  .dark .page-footer-alg { color: rgba(255,255,255,0.3); }
+  .dark .page-footer-page { color: rgba(255,255,255,0.2); }
+
+  /* Watermark overlay for dark covers */
+  .cover-watermark {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: 
+      radial-gradient(ellipse 60% 40% at 80% 20%, rgba(26,26,255,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 20% 80%, rgba(255,60,0,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Page separator line */
+  .sep {
+    height: 2px;
+    background: var(--black);
+    width: 40px;
+    margin: 18px 0;
+  }
+
+  /* ── RESPONSIVE ──────────────────────────────────────── */
+  .panel-section-collapse {
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .panel-section-collapse .caret {
+    font-size: 10px;
+    transition: transform 0.2s;
+    color: var(--mid);
+  }
+  .panel-section-collapse.open .caret { transform: rotate(180deg); }
+  .collapsible { display: none; }
+  .collapsible.open { display: block; }
+
+  /* ── PRINT STYLES ──────────────────────────────────── */
+  @media print {
+    body { overflow: visible; height: auto; }
+    .topbar, .panel, .preview-toolbar { display: none !important; }
+    .main { display: block; }
+    .preview-area { background: white; }
+    .preview-canvas { padding: 0; overflow: visible; }
+    .sow-page { display: flex !important; page-break-after: always; width: 100%; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    ALG<sup style="font-size:10px;font-weight:400;opacity:0.5">©</sup>
+    <span>/ SOW Generator</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost" onclick="resetForm()">Limpiar</button>
+    <button class="btn btn-pdf" onclick="generatePDF()">⬇ Exportar PDF</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ── LEFT PANEL ──────────────────────────────────── -->
+  <div class="panel">
+    <canvas id="bgCanvas"></canvas>
+    <div class="panel-inner">
+
+      <!-- CLIENT INFO -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <span class="form-section-title">Información del Cliente</span>
+        </div>
+        <div class="field">
+          <label>Nombre del Cliente / Empresa</label>
+          <input type="text" id="clientName" placeholder="Ej: BON FOODS" oninput="updatePreview()">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Contacto</label>
+            <input type="text" id="clientContact" placeholder="Nombre" oninput="updatePreview()">
+          </div>
+          <div class="field">
+            <label>Email del Cliente</label>
+            <input type="text" id="clientEmail" placeholder="correo@empresa.com" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- PROJECT INFO -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <span class="form-section-title">Datos del Proyecto</span>
+        </div>
+        <div class="field">
+          <label>Nombre del Proyecto</label>
+          <input type="text" id="projectName" placeholder="Ej: Marca Nueva" oninput="updatePreview()">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Fecha de Arranque</label>
+            <input type="date" id="startDate" oninput="updatePreview()">
+          </div>
+          <div class="field">
+            <label>Duración</label>
+            <input type="text" id="duration" placeholder="Ej: 16 semanas" oninput="updatePreview()">
+          </div>
+        </div>
+        <div class="field">
+          <label>Objetivo General</label>
+          <textarea id="generalObjective" placeholder="Describe el objetivo principal del proyecto..." oninput="updatePreview()"></textarea>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SECTIONS TOGGLE -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <span class="form-section-title">Secciones del SOW</span>
+        </div>
+        <div class="section-toggles">
+          <div class="toggle-item active locked" data-section="cover">
+            <div class="toggle-dot"></div>
+            <span class="toggle-label">Portada</span>
+          </div>
+          <div class="toggle-item active" data-section="prepared" onclick="toggleSection(this)">
+            <div class="toggle-dot"></div>
+            <span class="toggle-label">Preparado Para</span>
+          </div>
+          <div class="toggle-item active" data-section="objectives" onclick="toggleSection(this)">
+            <div class="toggle-dot"></div>
+            <span class="toggle-label">Objetivos</span>
+          </div>
+          <div class="toggle-item active" data-section="roadmap" onclick="toggleSection(this)">
+            <div class="toggle-dot"></div>
+            <span class="toggle-label">Roadmap</span>
+          </div>
+          <div class="toggle-item active" data-section="team" onclick="toggleSection(this)">
+            <div class="toggle-dot"></div>
+            <span class="toggle-label">Equipo</span>
+          </div>
+          <div class="toggle-item active" data-section="payment" onclick="toggleSection(this)">
+            <div class="toggle-dot"></div>
+            <span class="toggle-label">Plan de Pagos</span>
+          </div>
+          <div class="toggle-item active" data-section="calendar" onclick="toggleSection(this)">
+            <div class="toggle-dot"></div>
+            <span class="toggle-label">Calendario</span>
+          </div>
+          <div class="toggle-item active" data-section="terms" onclick="toggleSection(this)">
+            <div class="toggle-dot"></div>
+            <span class="toggle-label">T&amp;C</span>
+          </div>
+          <div class="toggle-item active locked" data-section="backcover">
+            <div class="toggle-dot"></div>
+            <span class="toggle-label">Contraportada</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SPECIFIC OBJECTIVES -->
+      <div class="form-section" id="formObjectives">
+        <div class="panel-section-collapse open" onclick="collapseSection(this)">
+          <span class="form-section-title">Objetivos Específicos</span>
+          <span class="caret">▼</span>
+        </div>
+        <div class="collapsible open" id="objCollapsible">
+          <div id="specificObjectivesContainer"></div>
+          <button class="btn btn-small btn-add" onclick="addObjective()">+ Agregar objetivo</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ROADMAP TABLE -->
+      <div class="form-section" id="formRoadmap">
+        <div class="panel-section-collapse open" onclick="collapseSection(this)">
+          <span class="form-section-title">Roadmap / Fases</span>
+          <span class="caret">▼</span>
+        </div>
+        <div class="collapsible open" id="roadmapCollapsible">
+          <div class="table-builder">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:25%">Fase</th>
+                  <th style="width:40%">Actividades</th>
+                  <th style="width:25%">Entregables</th>
+                  <th style="width:10%">Fecha</th>
+                </tr>
+              </thead>
+              <tbody id="roadmapBody"></tbody>
+            </table>
+            <div class="table-actions">
+              <button class="btn btn-small btn-add" onclick="addRoadmapRow()">+ Fila</button>
+              <button class="btn btn-small btn-remove" onclick="removeRoadmapRow()">− Fila</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- TEAM -->
+      <div class="form-section" id="formTeam">
+        <div class="panel-section-collapse open" onclick="collapseSection(this)">
+          <span class="form-section-title">Equipo de Trabajo</span>
+          <span class="caret">▼</span>
+        </div>
+        <div class="collapsible open" id="teamCollapsible">
+          <div id="teamContainer"></div>
+          <button class="btn btn-small btn-add" onclick="addTeamMember()">+ Agregar miembro</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- PAYMENT TABLE -->
+      <div class="form-section" id="formPayment">
+        <div class="panel-section-collapse open" onclick="collapseSection(this)">
+          <span class="form-section-title">Plan de Pagos</span>
+          <span class="caret">▼</span>
+        </div>
+        <div class="collapsible open" id="paymentCollapsible">
+          <div class="table-builder">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:20%">Mes</th>
+                  <th style="width:55%">Entregables</th>
+                  <th style="width:25%">Precio MXN</th>
+                </tr>
+              </thead>
+              <tbody id="paymentBody"></tbody>
+            </table>
+            <div class="table-actions">
+              <button class="btn btn-small btn-add" onclick="addPaymentRow()">+ Fila</button>
+              <button class="btn btn-small btn-remove" onclick="removePaymentRow()">− Fila</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- CALENDAR IMAGE -->
+      <div class="form-section" id="formCalendar">
+        <div class="panel-section-collapse open" onclick="collapseSection(this)">
+          <span class="form-section-title">Calendario (imagen)</span>
+          <span class="caret">▼</span>
+        </div>
+        <div class="collapsible open" id="calendarCollapsible">
+          <div class="image-upload-area" onclick="document.getElementById('calendarFile').click()">
+            <input type="file" id="calendarFile" accept="image/*" style="display:none" onchange="uploadCalendar(event)">
+            <div class="icon">📅</div>
+            <p>Arrastra o haz clic para subir imagen del calendario</p>
+          </div>
+          <div id="calendarPreview"></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- BACKCOVER CONTACTS -->
+      <div class="form-section">
+        <div class="panel-section-collapse open" onclick="collapseSection(this)">
+          <span class="form-section-title">Contraportada — Project Leads</span>
+          <span class="caret">▼</span>
+        </div>
+        <div class="collapsible open" id="backCoverCollapsible">
+          <div id="leadsContainer"></div>
+          <button class="btn btn-small btn-add" onclick="addLead()">+ Agregar contacto</button>
+        </div>
+      </div>
+
+    </div><!-- /panel-inner -->
+  </div><!-- /panel -->
+
+  <!-- ── RIGHT PREVIEW ──────────────────────────────── -->
+  <div class="preview-area">
+    <div class="preview-toolbar">
+      <div class="preview-toolbar-left" id="pageLabel">Vista previa — SOW</div>
+      <div class="page-nav">
+        <button onclick="prevPage()" id="btnPrev">◀</button>
+        <span id="pageCounter">1 / 1</span>
+        <button onclick="nextPage()" id="btnNext">▶</button>
+      </div>
+    </div>
+    <div class="preview-canvas" id="previewCanvas">
+      <!-- Pages injected by JS -->
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   BG CANVAS ANIMATION
+══════════════════════════════════════════════════════════ */
+(function() {
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let t = 0;
+
+  function resize() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const colors = [
+    [10, 0, 60],
+    [60, 10, 0],
+    [0, 20, 80],
+    [80, 20, 0],
+  ];
+
+  function lerp(a, b, f) { return a + (b - a) * f; }
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Base dark
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, w, h);
+
+    // Animated blobs
+    const blobs = [
+      { x: 0.3 + 0.2 * Math.sin(t * 0.7), y: 0.3 + 0.15 * Math.cos(t * 0.5), r: 0.55, c: colors[0] },
+      { x: 0.7 + 0.15 * Math.cos(t * 0.4), y: 0.6 + 0.2 * Math.sin(t * 0.6), r: 0.45, c: colors[1] },
+      { x: 0.5 + 0.1 * Math.sin(t * 1.1), y: 0.15 + 0.1 * Math.cos(t * 0.9), r: 0.3, c: colors[2] },
+      { x: 0.15 + 0.1 * Math.cos(t * 0.8), y: 0.75 + 0.1 * Math.sin(t * 0.7), r: 0.35, c: colors[3] },
+    ];
+
+    blobs.forEach(b => {
+      const gx = b.x * w, gy = b.y * h, gr = b.r * Math.max(w, h);
+      const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+      g.addColorStop(0, `rgba(${b.c[0]},${b.c[1]},${b.c[2]},0.7)`);
+      g.addColorStop(1, `rgba(${b.c[0]},${b.c[1]},${b.c[2]},0)`);
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    });
+
+    ctx.globalCompositeOperation = 'source-over';
+    t += 0.005;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ══════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════ */
+let activeSections = {
+  cover: true, prepared: true, objectives: true, roadmap: true,
+  team: true, payment: true, calendar: true, terms: true, backcover: true
+};
+
+let currentPage = 0;
+let teamCounter = 0;
+let leadCounter = 0;
+let calendarImageSrc = null;
+let teamPhotos = {}; // id -> dataURL
+
+/* ══════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════ */
+function init() {
+  // Default roadmap rows
+  addRoadmapRow('Fase 1.A', 'Diagnóstico y Mapeo de Información Interna y Externa', 'Entrevistas, análisis documental', 'Marzo');
+  addRoadmapRow('Fase 1.B', 'Brand DNA + Naming', 'Strategic brand deck', 'Abril');
+  addRoadmapRow('Fase 2.A', 'Investigación del Consumidor y Competencia', 'Investigación cualitativa, mystery shopper', 'Abril');
+  addRoadmapRow('Fase 2.B', 'Brand Identity', 'Manual de Marca + Brandbook', 'Mayo');
+  addRoadmapRow('Fase 3', 'Packaging', '3 SKUs diseñados', 'Junio');
+
+  // Default payment rows
+  addPaymentRow('1. Abril', 'Fase 1: Diagnóstico y Mapeo', '$195,000.00');
+  addPaymentRow('2. Mayo', 'Fase 2: Brand DNA + Naming / Investigación', '$195,000.00');
+  addPaymentRow('3. Junio', 'Fase 3: Brand Identity', '$195,000.00');
+  addPaymentRow('4. Julio', 'Fase 4: Packaging + Insights', '$195,000.00');
+
+  // Default objectives
+  addObjective('Comprender a profundidad al consumidor objetivo', 'Identificar segmentos clave del mercado y desarrollar perfiles de buyer personas.');
+  addObjective('Optimizar la experiencia del cliente', 'Analizar el customer journey para identificar barreras y oportunidades de compra.');
+  addObjective('Fortalecer la propuesta de valor', 'Evaluar los diferenciadores actuales frente a la competencia.');
+
+  // Default team
+  addTeamMember('Norma Coker', 'Founder, CEO / Operations Lead', 'norma@algdigital.co', 'ALG Digital');
+  addTeamMember('Santiago Navarro', 'Creative Direction & Brand Strategy', 'santiago@algdigital.co', 'ALG Digital');
+
+  // Default leads
+  addLead('Norma Coker', 'Project Lead', 'ALG Digital', 'norma@algdigital.co');
+  addLead('Juan Saldaña', 'Project Lead', 'Cliente', 'juan.saldana@empresa.com');
+
+  updatePreview();
+}
+
+/* ══════════════════════════════════════════════════════════
+   SECTION TOGGLES
+══════════════════════════════════════════════════════════ */
+function toggleSection(el) {
+  if (el.classList.contains('locked')) return;
+  const section = el.dataset.section;
+  activeSections[section] = !activeSections[section];
+  el.classList.toggle('active', activeSections[section]);
+  updatePreview();
+}
+
+/* ══════════════════════════════════════════════════════════
+   COLLAPSE FORM SECTIONS
+══════════════════════════════════════════════════════════ */
+function collapseSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+/* ══════════════════════════════════════════════════════════
+   OBJECTIVES
+══════════════════════════════════════════════════════════ */
+function addObjective(title = '', body = '') {
+  const c = document.getElementById('specificObjectivesContainer');
+  const id = Date.now();
+  const div = document.createElement('div');
+  div.className = 'team-member-card';
+  div.id = 'obj-' + id;
+  div.innerHTML = `
+    <div class="team-member-header">
+      <span class="team-member-title">Objetivo específico</span>
+      <button class="btn-remove-card" onclick="removeElement('obj-${id}')">×</button>
+    </div>
+    <div class="field"><label>Título</label>
+      <input type="text" value="${title}" placeholder="Ej: Comprender al consumidor" oninput="updatePreview()">
+    </div>
+    <div class="field"><label>Descripción</label>
+      <textarea placeholder="Detalle del objetivo..." oninput="updatePreview()">${body}</textarea>
+    </div>
+  `;
+  c.appendChild(div);
+}
+
+/* ══════════════════════════════════════════════════════════
+   ROADMAP
+══════════════════════════════════════════════════════════ */
+function addRoadmapRow(fase = '', actividades = '', entregables = '', fecha = '') {
+  const tbody = document.getElementById('roadmapBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" value="${fase}" placeholder="Fase X" oninput="updatePreview()"></td>
+    <td><textarea rows="2" oninput="updatePreview()">${actividades}</textarea></td>
+    <td><textarea rows="2" oninput="updatePreview()">${entregables}</textarea></td>
+    <td><input type="text" value="${fecha}" placeholder="Mes" oninput="updatePreview()"></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function removeRoadmapRow() {
+  const tbody = document.getElementById('roadmapBody');
+  if (tbody.lastChild) { tbody.removeChild(tbody.lastChild); updatePreview(); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   TEAM
+══════════════════════════════════════════════════════════ */
+function addTeamMember(name = '', role = '', email = '', company = '') {
+  const c = document.getElementById('teamContainer');
+  const id = 'tm-' + (++teamCounter);
+  const div = document.createElement('div');
+  div.className = 'team-member-card';
+  div.id = id;
+  div.innerHTML = `
+    <div class="team-member-header">
+      <span class="team-member-title">Miembro del equipo</span>
+      <button class="btn-remove-card" onclick="removeElement('${id}')">×</button>
+    </div>
+    <div class="photo-upload">
+      <div class="photo-preview" id="photo-${id}">👤</div>
+      <label class="photo-upload-btn" for="file-${id}">Subir foto</label>
+      <input type="file" id="file-${id}" accept="image/*" style="display:none" onchange="uploadPhoto(event,'${id}')">
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Nombre</label>
+        <input type="text" value="${name}" placeholder="Nombre Apellido" oninput="updatePreview()">
+      </div>
+      <div class="field"><label>Empresa</label>
+        <input type="text" value="${company}" placeholder="ALG Digital" oninput="updatePreview()">
+      </div>
+    </div>
+    <div class="field"><label>Rol / Título</label>
+      <input type="text" value="${role}" placeholder="Creative Director" oninput="updatePreview()">
+    </div>
+    <div class="field"><label>Email</label>
+      <input type="text" value="${email}" placeholder="nombre@agencia.co" oninput="updatePreview()">
+    </div>
+  `;
+  c.appendChild(div);
+}
+
+function uploadPhoto(e, cardId) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    teamPhotos[cardId] = ev.target.result;
+    const preview = document.getElementById('photo-' + cardId);
+    preview.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    updatePreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ══════════════════════════════════════════════════════════
+   PAYMENT
+══════════════════════════════════════════════════════════ */
+function addPaymentRow(mes = '', entregables = '', precio = '') {
+  const tbody = document.getElementById('paymentBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" value="${mes}" placeholder="1. Enero" oninput="updatePreview()"></td>
+    <td><textarea rows="2" oninput="updatePreview()">${entregables}</textarea></td>
+    <td><input type="text" value="${precio}" placeholder="$0.00" oninput="updatePreview()"></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function removePaymentRow() {
+  const tbody = document.getElementById('paymentBody');
+  if (tbody.lastChild) { tbody.removeChild(tbody.lastChild); updatePreview(); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   CALENDAR IMAGE
+══════════════════════════════════════════════════════════ */
+function uploadCalendar(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    calendarImageSrc = ev.target.result;
+    document.getElementById('calendarPreview').innerHTML =
+      `<div class="uploaded-img-preview" style="margin-top:10px"><img src="${ev.target.result}"></div>`;
+    updatePreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ══════════════════════════════════════════════════════════
+   LEADS (BACKCOVER)
+══════════════════════════════════════════════════════════ */
+function addLead(name = '', role = '', company = '', email = '') {
+  const c = document.getElementById('leadsContainer');
+  const id = 'lead-' + (++leadCounter);
+  const div = document.createElement('div');
+  div.className = 'team-member-card';
+  div.id = id;
+  div.innerHTML = `
+    <div class="team-member-header">
+      <span class="team-member-title">Project Lead</span>
+      <button class="btn-remove-card" onclick="removeElement('${id}')">×</button>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Nombre</label>
+        <input type="text" value="${name}" placeholder="Nombre" oninput="updatePreview()">
+      </div>
+      <div class="field"><label>Empresa</label>
+        <input type="text" value="${company}" placeholder="Empresa" oninput="updatePreview()">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Rol</label>
+        <input type="text" value="${role}" placeholder="Project Lead" oninput="updatePreview()">
+      </div>
+      <div class="field"><label>Email</label>
+        <input type="text" value="${email}" placeholder="mail@empresa.com" oninput="updatePreview()">
+      </div>
+    </div>
+  `;
+  c.appendChild(div);
+}
+
+function removeElement(id) { const el = document.getElementById(id); if (el) el.remove(); updatePreview(); }
+
+/* ══════════════════════════════════════════════════════════
+   READ FORM DATA
+══════════════════════════════════════════════════════════ */
+function readForm() {
+  const d = {};
+  d.clientName = v('clientName');
+  d.clientContact = v('clientContact');
+  d.clientEmail = v('clientEmail');
+  d.projectName = v('projectName');
+  d.startDate = v('startDate');
+  d.duration = v('duration');
+  d.generalObjective = v('generalObjective');
+
+  // Specific objectives
+  d.objectives = [];
+  document.querySelectorAll('#specificObjectivesContainer .team-member-card').forEach(card => {
+    const inputs = card.querySelectorAll('input, textarea');
+    d.objectives.push({ title: inputs[0].value, body: inputs[1].value });
+  });
+
+  // Roadmap rows
+  d.roadmap = [];
+  document.querySelectorAll('#roadmapBody tr').forEach(tr => {
+    const cells = tr.querySelectorAll('input, textarea');
+    d.roadmap.push({ fase: cells[0].value, actividades: cells[1].value, entregables: cells[2].value, fecha: cells[3].value });
+  });
+
+  // Team members
+  d.team = [];
+  document.querySelectorAll('#teamContainer .team-member-card').forEach(card => {
+    const id = card.id;
+    const inputs = card.querySelectorAll('input');
+    d.team.push({
+      id, name: inputs[0].value, company: inputs[1].value,
+      role: inputs[2].value, email: inputs[3].value,
+      photo: teamPhotos[id] || null
+    });
+  });
+
+  // Payment rows
+  d.payment = [];
+  document.querySelectorAll('#paymentBody tr').forEach(tr => {
+    const cells = tr.querySelectorAll('input, textarea');
+    d.payment.push({ mes: cells[0].value, entregables: cells[1].value, precio: cells[2].value });
+  });
+
+  // Leads
+  d.leads = [];
+  document.querySelectorAll('#leadsContainer .team-member-card').forEach(card => {
+    const inputs = card.querySelectorAll('input');
+    d.leads.push({ name: inputs[0].value, company: inputs[1].value, role: inputs[2].value, email: inputs[3].value });
+  });
+
+  d.calendarImg = calendarImageSrc;
+  return d;
+}
+
+function v(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+
+/* ══════════════════════════════════════════════════════════
+   BUILD PAGES
+══════════════════════════════════════════════════════════ */
+const TERMS = [
+  "Al aceptar la cotización el cliente deberá de cubrir el 100% de la primera mensualidad del proyecto para calendarizar el proyecto e iniciar el mismo, o el pago de la primer etapa o 50% de anticipo sobre el total del proyecto.",
+  "Cualquier retraso por parte del cliente afectará directamente a los compromisos y fechas de entrega acordados para el desarrollo del proyecto.",
+  "El tiempo para dar feedback es de 2 días hábiles, en caso de no dar retroalimentación a tiempo se pondrá en pausa el proyecto y se cobrará un fee del 5% sobre el total del proyecto para su reactivación.",
+  "El cliente se compromete a hacer los pagos en los tiempos acordados en la sección de cotización.",
+  "Los cambios y/o modificaciones no contempladas en el presente presupuesto causan honorarios.",
+  "Los costos no incluyen IVA.",
+  "En caso de cancelar el contrato (una vez iniciado el proyecto) el anticipo y/o honorarios ya pagados no serán reembolsados.",
+  "Los precios incluyen el diseño y proceso electrónico del mismo, archivos digitales útiles para su reproducción; no incluyen costos de trabajos de terceros como fotografías de alta calidad, ni reproducción en serie de estas piezas.",
+  "Los diseñadores se comprometen a entregar todos los documentos y archivos al cliente al cierre del proyecto.",
+  "Los diseñadores mantienen derecho de autor sobre las propuestas descartadas.",
+  "Es responsabilidad del cliente revisar el avance del diseño periódicamente en intervalos de 1 semana como máximo, para asegurar que el funcionamiento sea correcto y se obtenga el resultado esperado.",
+  "Servicios adicionales: Cualquier pedido adicional a los entregables descritos en la propuesta serán cotizados y separados por separado, previo acuerdo con el cliente.",
+  "ALGORITMO DESIGN SAPI DE CV no se responsabiliza de no poder registrar la marca si el cliente decide no pagar el estudio de viabilidad y registro en IMPI.",
+  "Si el proyecto llega a ser cancelado por decisión del cliente, ALGORITMO DESIGN SAPI DE CV reserva cualquier tipo de anticipo de pago realizado.",
+  "Esta cotización no incluye servicios de materiales impresos, almacenamiento de datos o compra de dominios electrónicos.",
+  "En caso de no tener respuesta por parte del cliente en un periodo de 3 semanas el proyecto se da por cancelado.",
+  "En caso de ajustes, cada layout tendrá una ronda de ajustes incluida; después de eso se genera un costo adicional a acordarse dependiendo de la complejidad y horas de trabajo.",
+  "ALGORITMO DESIGN SAPI DE CV retendrá los derechos de autor sobre la propiedad intelectual generada durante el proyecto.",
+  "ALGORITMO DESIGN SAPI DE CV se reserva el derecho de publicar imágenes, fotografías o cualquier material para fines de promoción de sus servicios."
+];
+
+function buildPages(d) {
+  const pages = [];
+
+  // 1. Cover
+  if (activeSections.cover) {
+    pages.push(`
+      <div class="sow-page dark">
+        <div class="cover-watermark"></div>
+        <div class="cover-inner">
+          <div class="cover-logo">ALG<span class="cover-logo-sup">©</span></div>
+          <div class="cover-tagline">algdigital.co</div>
+        </div>
+        <div class="cover-domain">ALGDIGITAL.CO</div>
+      </div>
+    `);
+  }
+
+  // 2. Prepared for
+  if (activeSections.prepared) {
+    const dateStr = d.startDate ? new Date(d.startDate + 'T00:00:00').toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+    pages.push(`
+      <div class="sow-page dark">
+        <div class="cover-watermark"></div>
+        <div style="padding:40px 52px 0;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.35)">ALG + ${esc(d.clientName || 'CLIENTE')}</div>
+          <div style="font-family:var(--font-display);font-weight:900;font-size:22px;letter-spacing:-0.5px;color:var(--white);margin-top:4px">SOW</div>
+        </div>
+        <div class="prepared-content">
+          <div class="prepared-label">Preparado para</div>
+          <div class="prepared-client">${esc(d.clientName || 'Cliente')}</div>
+          <div class="prepared-details">
+            ${d.clientContact ? `Contacto: <span>${esc(d.clientContact)}</span><br>` : ''}
+            ${d.clientEmail ? `${esc(d.clientEmail)}<br>` : ''}
+            ${d.projectName ? `<br>Proyecto: <span>${esc(d.projectName)}</span><br>` : ''}
+            ${d.startDate ? `Inicio: <span>${dateStr}</span><br>` : ''}
+            ${d.duration ? `Duración: <span>${esc(d.duration)}</span>` : ''}
+          </div>
+        </div>
+        <div class="page-footer dark" style="border-top:1px solid rgba(255,255,255,0.08)">
+          <span class="page-footer-alg" style="color:rgba(255,255,255,0.25)">ALG©</span>
+          <span class="page-footer-page" style="color:rgba(255,255,255,0.18)">${pages.length + 1}</span>
+        </div>
+      </div>
+    `);
+  }
+
+  // 3. Objectives
+  if (activeSections.objectives) {
+    const objItems = d.objectives.map((o, i) => `
+      <div class="objective-item">
+        <div class="objective-num">0${i + 1}</div>
+        <div class="objective-content">
+          <strong>${esc(o.title)}</strong>
+          <p>${esc(o.body)}</p>
+        </div>
+      </div>
+    `).join('');
+
+    pages.push(`
+      <div class="sow-page light">
+        <div class="page-header">
+          <div class="page-tag">ALG + ${esc(d.clientName || 'CLIENTE')} — ${esc(d.projectName || 'PROYECTO')}</div>
+          <div class="page-title">Objetivo<br>General</div>
+        </div>
+        <div class="page-body">
+          <div class="objective-block">
+            <div class="objective-label">Objetivo principal</div>
+            <div class="objective-text">${esc(d.generalObjective || '—')}</div>
+          </div>
+          ${d.objectives.length > 0 ? `
+          <div class="objective-block">
+            <div class="objective-label">Objetivos Específicos</div>
+            ${objItems}
+          </div>` : ''}
+        </div>
+        <div class="page-footer">
+          <span class="page-footer-alg">ALG©</span>
+          <span class="page-footer-page">${pages.length + 1}</span>
+        </div>
+      </div>
+    `);
+  }
+
+  // 4. Roadmap
+  if (activeSections.roadmap && d.roadmap.length > 0) {
+    const rows = d.roadmap.map(r => `
+      <tr>
+        <td><strong>${esc(r.fase)}</strong></td>
+        <td>${esc(r.actividades)}</td>
+        <td>${esc(r.entregables)}</td>
+        <td>${esc(r.fecha)}</td>
+      </tr>
+    `).join('');
+
+    pages.push(`
+      <div class="sow-page light">
+        <div class="page-header">
+          <div class="page-tag">ALG + ${esc(d.clientName || 'CLIENTE')}</div>
+          <div class="page-title">Roadmap</div>
+        </div>
+        <div class="page-body">
+          <table class="sow-table">
+            <thead>
+              <tr>
+                <th style="width:18%">Fase</th>
+                <th style="width:35%">Actividades Clave</th>
+                <th style="width:32%">Metodología / Entregables</th>
+                <th style="width:15%">Fecha</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div class="page-footer">
+          <span class="page-footer-alg">ALG©</span>
+          <span class="page-footer-page">${pages.length + 1}</span>
+        </div>
+      </div>
+    `);
+  }
+
+  // 5. Team
+  if (activeSections.team && d.team.length > 0) {
+    const cards = d.team.map(m => {
+      const photoHTML = m.photo
+        ? `<div class="team-photo"><img src="${m.photo}"></div>`
+        : `<div class="team-photo" style="background:#e5e5e5;display:flex;align-items:center;justify-content:center;font-size:24px">👤</div>`;
+      return `
+        <div class="team-card">
+          ${photoHTML}
+          <div class="team-name">${esc(m.name)}</div>
+          <div class="team-role">${esc(m.role)}</div>
+          ${m.company ? `<div class="team-role" style="color:#aaa">${esc(m.company)}</div>` : ''}
+          <div class="team-email">${esc(m.email)}</div>
+        </div>
+      `;
+    }).join('');
+
+    pages.push(`
+      <div class="sow-page light">
+        <div class="page-header">
+          <div class="page-tag">ALG + ${esc(d.clientName || 'CLIENTE')}</div>
+          <div class="page-title">Equipo<br>de Trabajo</div>
+        </div>
+        <div class="page-body">
+          <div class="team-grid">${cards}</div>
+        </div>
+        <div class="page-footer">
+          <span class="page-footer-alg">ALG©</span>
+          <span class="page-footer-page">${pages.length + 1}</span>
+        </div>
+      </div>
+    `);
+  }
+
+  // 6. Payment
+  if (activeSections.payment && d.payment.length > 0) {
+    const rows = d.payment.map(r => `
+      <tr>
+        <td><strong>${esc(r.mes)}</strong></td>
+        <td>${esc(r.entregables)}</td>
+        <td>${esc(r.precio)}</td>
+      </tr>
+    `).join('');
+
+    // Compute total
+    let total = 0;
+    d.payment.forEach(r => {
+      const n = parseFloat(r.precio.replace(/[^0-9.]/g, ''));
+      if (!isNaN(n)) total += n;
+    });
+    const totalStr = total > 0 ? `$${total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—';
+
+    pages.push(`
+      <div class="sow-page light">
+        <div class="page-header">
+          <div class="page-tag">ALG + ${esc(d.clientName || 'CLIENTE')}</div>
+          <div class="page-title">Plan de Pagos<br>(Actualizado)</div>
+        </div>
+        <div class="page-body">
+          <table class="payment-table">
+            <thead>
+              <tr>
+                <th style="width:18%">Mensualidad</th>
+                <th style="width:57%">Entregables</th>
+                <th style="width:25%">Precio MXN</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+              <tr class="payment-total">
+                <td colspan="2"><strong>TOTAL</strong></td>
+                <td>${totalStr}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="page-footer">
+          <span class="page-footer-alg">ALG©</span>
+          <span class="page-footer-page">${pages.length + 1}</span>
+        </div>
+      </div>
+    `);
+  }
+
+  // 7. Calendar
+  if (activeSections.calendar) {
+    pages.push(`
+      <div class="sow-page light">
+        <div class="page-header">
+          <div class="page-tag">ALG + ${esc(d.clientName || 'CLIENTE')}</div>
+          <div class="page-title">Calendario</div>
+        </div>
+        <div class="page-body">
+          ${calendarImageSrc
+            ? `<div class="calendar-img-wrap"><img src="${calendarImageSrc}"></div>`
+            : `<div style="height:200px;background:#f5f5f5;border:2px dashed #ddd;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:13px">Sube la imagen del calendario en el panel izquierdo</div>`
+          }
+        </div>
+        <div class="page-footer">
+          <span class="page-footer-alg">ALG©</span>
+          <span class="page-footer-page">${pages.length + 1}</span>
+        </div>
+      </div>
+    `);
+  }
+
+  // 8. T&C
+  if (activeSections.terms) {
+    const termItems = TERMS.map(t => `<li>${t}</li>`).join('');
+    pages.push(`
+      <div class="sow-page light">
+        <div class="page-header">
+          <div class="page-tag">ALG</div>
+          <div class="page-title">Términos y<br>Condiciones</div>
+        </div>
+        <div class="page-body">
+          <ul class="tyc-list">${termItems}</ul>
+        </div>
+        <div class="page-footer">
+          <span class="page-footer-alg">ALG©</span>
+          <span class="page-footer-page">${pages.length + 1}</span>
+        </div>
+      </div>
+    `);
+  }
+
+  // 9. Backcover
+  if (activeSections.backcover) {
+    const leadItems = d.leads.map(l => `
+      <div class="contact-item">
+        <div class="contact-name">${esc(l.name)}</div>
+        <div class="contact-role">${esc(l.role)}</div>
+        <div class="contact-company">${esc(l.company)}</div>
+        <div class="contact-email">${esc(l.email)}</div>
+      </div>
+    `).join('');
+
+    pages.push(`
+      <div class="sow-page dark">
+        <div class="cover-watermark"></div>
+        <div class="backcover-inner">
+          <div class="alg-header">ALG + ${esc(d.clientName || 'CLIENTE')}<br>
+            <span style="font-size:13px;font-weight:400;opacity:0.5;letter-spacing:0">${esc(d.projectName || '')}</span>
+          </div>
+          <div class="contacts-grid">${leadItems}</div>
+          <div class="backcover-logo">ALG©</div>
+        </div>
+      </div>
+    `);
+  }
+
+  return pages;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RENDER PREVIEW
+══════════════════════════════════════════════════════════ */
+let pages = [];
+
+function updatePreview() {
+  const d = readForm();
+  pages = buildPages(d);
+
+  const canvas = document.getElementById('previewCanvas');
+  canvas.innerHTML = pages.join('');
+
+  // Mark active
+  const all = canvas.querySelectorAll('.sow-page');
+  all.forEach((p, i) => {
+    p.classList.toggle('active', i === currentPage);
+  });
+
+  // If currentPage > pages, reset
+  if (currentPage >= pages.length) { currentPage = Math.max(0, pages.length - 1); }
+  showPage(currentPage);
+}
+
+function showPage(idx) {
+  currentPage = idx;
+  const all = document.querySelectorAll('.sow-page');
+  all.forEach((p, i) => p.classList.toggle('active', i === idx));
+  document.getElementById('pageCounter').textContent = `${idx + 1} / ${pages.length}`;
+  document.getElementById('btnPrev').disabled = idx === 0;
+  document.getElementById('btnNext').disabled = idx === pages.length - 1;
+  document.getElementById('pageLabel').textContent = `Vista previa — Página ${idx + 1} de ${pages.length}`;
+}
+
+function prevPage() { if (currentPage > 0) showPage(currentPage - 1); }
+function nextPage() { if (currentPage < pages.length - 1) showPage(currentPage + 1); }
+
+function esc(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+}
+
+/* ══════════════════════════════════════════════════════════
+   PDF GENERATION
+══════════════════════════════════════════════════════════ */
+async function generatePDF() {
+  const btn = document.querySelector('.btn-pdf');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Generando PDF...';
+  btn.disabled = true;
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4', compress: true });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const allPages = document.querySelectorAll('.sow-page');
+    const visiblePages = Array.from(allPages);
+
+    for (let i = 0; i < visiblePages.length; i++) {
+      const page = visiblePages[i];
+
+      // Temporarily make visible for capture
+      const wasActive = page.classList.contains('active');
+      page.style.display = 'flex';
+      page.style.width = '680px';
+
+      const canvas = await html2canvas(page, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: page.classList.contains('dark') ? '#000000' : '#ffffff',
+        logging: false,
+      });
+
+      if (!wasActive) { page.style.display = ''; page.style.width = ''; }
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const imgW = pageWidth;
+      const imgH = (canvas.height * pageWidth) / canvas.width;
+
+      if (i > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgW, Math.min(imgH, pageHeight));
+    }
+
+    const clientName = document.getElementById('clientName').value || 'cliente';
+    pdf.save(`SOW_ALG_${clientName.replace(/\s+/g, '_')}.pdf`);
+
+  } catch (err) {
+    console.error(err);
+    alert('Error al generar el PDF: ' + err.message);
+  }
+
+  btn.textContent = origText;
+  btn.disabled = false;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════════════════ */
+function resetForm() {
+  if (!confirm('¿Limpiar todo el formulario?')) return;
+  document.getElementById('clientName').value = '';
+  document.getElementById('clientContact').value = '';
+  document.getElementById('clientEmail').value = '';
+  document.getElementById('projectName').value = '';
+  document.getElementById('startDate').value = '';
+  document.getElementById('duration').value = '';
+  document.getElementById('generalObjective').value = '';
+  document.getElementById('specificObjectivesContainer').innerHTML = '';
+  document.getElementById('roadmapBody').innerHTML = '';
+  document.getElementById('paymentBody').innerHTML = '';
+  document.getElementById('teamContainer').innerHTML = '';
+  document.getElementById('leadsContainer').innerHTML = '';
+  calendarImageSrc = null;
+  teamPhotos = {};
+  document.getElementById('calendarPreview').innerHTML = '';
+  teamCounter = 0; leadCounter = 0;
+  updatePreview();
+}
+
+/* ══════════════════════════════════════════════════════════
+   START
+══════════════════════════════════════════════════════════ */
+init();
+</script>
+</body>
+</html>
