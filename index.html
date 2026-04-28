@@ -423,40 +423,59 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 22px;
+  padding: 8px 18px;
   border-bottom: 1px solid var(--border);
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.6);
   flex-shrink: 0;
+  gap: 12px;
 }
 .preview-toolbar-left {
   font-size: 10px;
   color: var(--mid);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  flex: 1;
 }
-.page-nav {
+.toolbar-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
-.page-nav button {
+.toolbar-btn {
   background: var(--border);
   border: none;
   color: var(--white);
-  width: 26px; height: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 8px;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.15s;
   font-family: var(--font);
+  letter-spacing: 0;
+  white-space: nowrap;
 }
-.page-nav button:hover { background: #333; }
-.page-nav button:disabled { opacity: 0.25; cursor: not-allowed; }
-.page-nav span {
-  font-size: 11px;
+.toolbar-btn:hover { background: #383838; }
+.toolbar-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+.toolbar-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin: 0 2px;
+}
+.zoom-label {
+  font-size: 10px;
   color: var(--mid);
-  min-width: 50px;
+  min-width: 38px;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+.page-counter-label {
+  font-size: 10px;
+  color: var(--mid);
+  min-width: 52px;
   text-align: center;
   letter-spacing: 0.06em;
 }
@@ -464,14 +483,25 @@ body {
   flex: 1;
   overflow-y: auto;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   padding: 28px 20px;
+  gap: 20px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
-.preview-canvas::-webkit-scrollbar { width: 3px; }
-.preview-canvas::-webkit-scrollbar-thumb { background: var(--border); }
+.preview-canvas::-webkit-scrollbar { width: 5px; }
+.preview-canvas::-webkit-scrollbar-track { background: transparent; }
+.preview-canvas::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+.preview-canvas::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+.preview-scaler {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  transform-origin: top center;
+  transition: transform 0.2s ease;
+}
 
 /* ══════════════════════════════
    SOW PAGE STYLES
@@ -482,13 +512,12 @@ body {
   background: var(--white);
   color: var(--black);
   position: relative;
-  box-shadow: 0 12px 80px rgba(0,0,0,0.8);
-  display: none;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.7);
+  display: flex;
   flex-direction: column;
   font-family: var(--font);
   flex-shrink: 0;
 }
-.sow-page.active { display: flex; }
 .sow-page.dark { background: var(--black); color: var(--white); }
 
 /* COVER */
@@ -496,7 +525,8 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
   position: relative;
   overflow: hidden;
 }
@@ -505,31 +535,37 @@ body {
   inset: 0;
   background-size: cover;
   background-position: center;
-  opacity: 0.55;
+  opacity: 0.72;
 }
 .cover-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.7) 100%);
+  background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
 }
 .cover-content {
   position: relative;
   z-index: 2;
-  padding: 48px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
 }
 .cover-logo-img {
-  height: 52px;
-  width: auto;
-  margin-bottom: 12px;
+  width: 180px;
+  height: auto;
 }
 .cover-domain {
+  display: none;
+}
+.cover-bottom {
+  position: absolute;
+  bottom: 40px;
+  left: 48px;
+  z-index: 2;
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.38);
+  color: rgba(255,255,255,0.32);
 }
 
 /* PREPARED */
@@ -885,10 +921,6 @@ body {
   </div>
   <div class="topbar-actions">
     <button class="btn btn-ghost" onclick="resetForm()">Limpiar</button>
-    <button class="btn btn-pdf" onclick="generatePDF()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Exportar PDF
-    </button>
   </div>
 </div>
 
@@ -1108,13 +1140,30 @@ body {
   <div class="preview-area">
     <div class="preview-toolbar">
       <div class="preview-toolbar-left" id="pageLabel">Vista previa</div>
-      <div class="page-nav">
-        <button onclick="prevPage()" id="btnPrev">◀</button>
-        <span id="pageCounter">1 / 1</span>
-        <button onclick="nextPage()" id="btnNext">▶</button>
+      <div class="toolbar-controls">
+        <!-- Zoom -->
+        <button class="toolbar-btn" onclick="zoomOut()" title="Alejar (-)">−</button>
+        <span class="zoom-label" id="zoomLabel">100%</span>
+        <button class="toolbar-btn" onclick="zoomIn()" title="Acercar (+)">+</button>
+        <button class="toolbar-btn" onclick="zoomReset()" title="Restablecer zoom">⊡</button>
+        <div class="toolbar-sep"></div>
+        <!-- Page counter -->
+        <span class="page-counter-label" id="pageCounter">— / —</span>
+        <div class="toolbar-sep"></div>
+        <!-- Export -->
+        <button class="toolbar-btn" onclick="generatePDF()" title="Exportar PDF">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          PDF
+        </button>
+        <button class="toolbar-btn" onclick="openGoogleDrive()" title="Subir a Google Drive" style="background:rgba(66,133,244,0.2);color:#7ab4ff">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right:5px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Drive
+        </button>
       </div>
     </div>
-    <div class="preview-canvas" id="previewCanvas"></div>
+    <div class="preview-canvas" id="previewCanvas">
+      <div class="preview-scaler" id="previewScaler"></div>
+    </div>
   </div>
 
 </div>
@@ -1167,7 +1216,6 @@ let activeSections = {
   cover:true, prepared:true, objectives:true, roadmap:true,
   team:true, payment:true, calendar:true, terms:true, backcover:true
 };
-let currentPage = 0;
 let teamCounter = 0;
 let leadCounter = 0;
 let calendarImageSrc = null;
@@ -1429,8 +1477,8 @@ function buildPages(d) {
           <div class="cover-overlay"></div>
           <div class="cover-content">
             <img class="cover-logo-img" src="${IMG_WHITE}" alt="ALG">
-            <div class="cover-domain">algdigital.co</div>
           </div>
+          <div class="cover-bottom">algdigital.co</div>
         </div>
       </div>`);
   }
@@ -1662,32 +1710,63 @@ function buildPages(d) {
 
 /* ── RENDER ── */
 let allPages=[];
+let zoomLevel=1.0;
+const ZOOM_STEP=0.1;
+const ZOOM_MIN=0.4;
+const ZOOM_MAX=2.0;
+
 function updatePreview() {
   const d=readForm();
   allPages=buildPages(d);
+  const scaler=document.getElementById('previewScaler');
+  scaler.innerHTML=allPages.join('');
+  applyZoom();
+  updatePageCounter();
+}
+
+function applyZoom() {
+  const scaler=document.getElementById('previewScaler');
+  scaler.style.transform=`scale(${zoomLevel})`;
+  // Adjust container height so scrollbar is accurate
+  const pages=scaler.querySelectorAll('.sow-page');
+  const totalH=pages.length*(933+20)*zoomLevel;
+  scaler.style.marginBottom=`${Math.max(0,(zoomLevel-1)*933*pages.length*0.5)}px`;
+  document.getElementById('zoomLabel').textContent=`${Math.round(zoomLevel*100)}%`;
+}
+
+function zoomIn() { if(zoomLevel<ZOOM_MAX){zoomLevel=Math.min(ZOOM_MAX,parseFloat((zoomLevel+ZOOM_STEP).toFixed(2)));applyZoom();} }
+function zoomOut() { if(zoomLevel>ZOOM_MIN){zoomLevel=Math.max(ZOOM_MIN,parseFloat((zoomLevel-ZOOM_STEP).toFixed(2)));applyZoom();} }
+function zoomReset() { zoomLevel=1.0; applyZoom(); }
+
+function updatePageCounter() {
+  document.getElementById('pageCounter').textContent=`${allPages.length} pág.`;
+  document.getElementById('pageLabel').textContent=`Vista previa — ${allPages.length} página${allPages.length!==1?'s':''}`;
+}
+
+// Keyboard zoom shortcuts
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='='){e.preventDefault();zoomIn();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='-'){e.preventDefault();zoomOut();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='0'){e.preventDefault();zoomReset();}
+});
+
+// Scroll-based page counter update
+document.getElementById('previewCanvas').addEventListener('scroll',()=>{
   const canvas=document.getElementById('previewCanvas');
-  canvas.innerHTML=allPages.join('');
-  if(currentPage>=allPages.length) currentPage=Math.max(0,allPages.length-1);
-  showPage(currentPage);
-}
-
-function showPage(idx) {
-  currentPage=idx;
-  document.querySelectorAll('.sow-page').forEach((p,i)=>p.classList.toggle('active',i===idx));
-  document.getElementById('pageCounter').textContent=`${idx+1} / ${allPages.length}`;
-  document.getElementById('btnPrev').disabled=idx===0;
-  document.getElementById('btnNext').disabled=idx===allPages.length-1;
-  document.getElementById('pageLabel').textContent=`Página ${idx+1} de ${allPages.length}`;
-}
-
-function prevPage(){if(currentPage>0)showPage(currentPage-1);}
-function nextPage(){if(currentPage<allPages.length-1)showPage(currentPage+1);}
+  const pages=canvas.querySelectorAll('.sow-page');
+  if(!pages.length) return;
+  const scrollTop=canvas.scrollTop;
+  const pageH=(933+20)*zoomLevel;
+  const idx=Math.round(scrollTop/pageH);
+  const current=Math.min(idx+1,pages.length);
+  document.getElementById('pageLabel').textContent=`Página ${current} de ${pages.length}`;
+});
 
 /* ── PDF ── */
 async function generatePDF() {
-  const btn=document.querySelector('.btn-pdf');
-  const orig=btn.innerHTML;
-  btn.innerHTML='⏳ Generando...'; btn.disabled=true;
+  const btns=document.querySelectorAll('.toolbar-btn');
+  btns.forEach(b=>b.disabled=true);
+  document.getElementById('pageLabel').textContent='⏳ Generando PDF...';
   try {
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
@@ -1696,14 +1775,14 @@ async function generatePDF() {
     const pages=document.querySelectorAll('.sow-page');
     for(let i=0;i<pages.length;i++) {
       const page=pages[i];
-      const wasFlex=page.style.display;
-      page.style.display='flex'; page.style.width='660px';
+      const origTransform=page.style.transform||'';
+      page.style.transform='none';
       const c=await html2canvas(page,{
         scale:2,useCORS:true,allowTaint:true,
         backgroundColor:page.classList.contains('dark')?'#000':'#fff',
         logging:false
       });
-      page.style.display=wasFlex; page.style.width='';
+      page.style.transform=origTransform;
       const img=c.toDataURL('image/jpeg',0.93);
       const imgH=(c.height*pageW)/c.width;
       if(i>0) pdf.addPage();
@@ -1714,7 +1793,20 @@ async function generatePDF() {
   } catch(err) {
     console.error(err); alert('Error al generar el PDF: '+err.message);
   }
-  btn.innerHTML=orig; btn.disabled=false;
+  btns.forEach(b=>b.disabled=false);
+  updatePageCounter();
+}
+
+/* ── GOOGLE DRIVE ── */
+function openGoogleDrive() {
+  // Opens Google Drive upload page in a new tab
+  // User can drag-drop or upload the PDF there
+  window.open('https://drive.google.com/drive/my-drive','_blank');
+  // Show a helpful tip
+  const label=document.getElementById('pageLabel');
+  const orig=label.textContent;
+  label.textContent='💡 Exporta el PDF primero, luego súbelo a Drive';
+  setTimeout(()=>{label.textContent=orig;},4000);
 }
 
 /* ── RESET ── */
